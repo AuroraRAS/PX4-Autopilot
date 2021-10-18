@@ -31,6 +31,12 @@ if (("${PX4_BOARD}" MATCHES "atlflight_eagle") OR ("${PX4_BOARD}" MATCHES "atlfl
 
 	FASTRPC_STUB_GEN(../qurt/px4muorb.idl)
 
+	if(ANDROID)
+		SET(posix_non_android_libs "")
+	else()
+		SET(posix_non_android_libs "pthread" "rt")
+	endif()
+
 	LINUX_APP(
 		APP_NAME px4
 		IDL_NAME px4muorb
@@ -45,7 +51,8 @@ if (("${PX4_BOARD}" MATCHES "atlflight_eagle") OR ("${PX4_BOARD}" MATCHES "atlfl
 				parameters
 				${module_libraries}
 				${FASTRPC_ARM_LIBS}
-				pthread m rt
+				${posix_non_android_libs}
+				m
 			-Wl,--end-group
 		)
 
@@ -55,10 +62,17 @@ else()
 		apps.cpp
 		)
 
+
+	if(ANDROID)
+		SET(posix_non_android_libs "")
+	else()
+		SET(posix_non_android_libs "pthread")
+	endif()
 	target_link_libraries(px4
 		PRIVATE
 			${module_libraries}
-			pthread m
+			${posix_non_android_libs}
+			m
 
 			# horrible circular dependencies that need to be teased apart
 			px4_layer px4_platform
@@ -66,7 +80,7 @@ else()
 			parameters
 	)
 
-	if(NOT APPLE)
+	if((NOT APPLE) AND (NOT ANDROID))
 		target_link_libraries(px4 PRIVATE rt)
 	endif()
 
